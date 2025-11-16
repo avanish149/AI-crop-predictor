@@ -1,8 +1,4 @@
-import os
-import streamlit as st
 
-st.write("DEBUG: Files in directory:", os.listdir())
-st.write("DEBUG: Current working directory:", os.getcwd())
 
 import os
 import pandas as pd
@@ -82,3 +78,4 @@ else:
 # ---------------------------
 st.subheader("Basic Dataset Statistics")
 st.write(data.describe())
+
