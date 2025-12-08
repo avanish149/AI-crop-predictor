@@ -22,7 +22,7 @@ if not os.path.isfile(DATAFILE):
 try:
     data = pd.read_csv(DATAFILE)
     print("Dataset loaded successfully. Shape:", data.shape)
-except Exception as e:
+except Exception:
     print("ERROR: Failed to read CSV file.")
     raise
 
@@ -39,12 +39,41 @@ column_map = {
 }
 data = data.rename(columns=column_map)
 
-# Ensure extended feature set is present
-if "rates" not in data.columns:
-    data["rates"] = 25.0   # default placeholder value
-if "yield" not in data.columns:
-    data["yield"] = 3000.0  # default placeholder value
+# Map crop-specific yield (kg/ha) and price (INR/kg)
+crop_data = {
+    'rice':        (3850, 25.5),
+    'maize':       (4200, 18.2),
+    'chickpea':    (850,  65.0),
+    'kidneybeans': (2800, 45.0),
+    'pigeonpeas':  (720,  70.0),
+    'mothbeans':   (450,  55.0),
+    'mungbean':    (500,  60.0),
+    'blackgram':   (480,  58.0),
+    'lentil':      (950,  62.0),
+    'pomegranate': (22000, 80.0),
+    'banana':      (35000, 35.0),
+    'mango':       (8500, 45.0),
+    'grapes':      (22000, 120.0),
+    'watermelon':  (25000, 12.0),
+    'muskmelon':   (28000, 15.0),
+    'apple':       (20000, 150.0),
+    'orange':      (15000, 40.0),
+    'papaya':      (35000, 25.0),
+    'coconut':     (14000, 30.0),
+    'cotton':      (800,  120.0),
+    'jute':        (2500, 35.0),
+    'coffee':      (1200, 200.0)
+}
 
+# Ensure label is lowercase to match dictionary keys
+data["label"] = data["label"].str.strip().str.lower()
+
+# Add crop-specific yield and rate columns
+yield_rate_df = data["label"].map(crop_data).apply(pd.Series)
+yield_rate_df.columns = ["yield", "rates"]
+data = pd.concat([data, yield_rate_df], axis=1)
+
+# Validate required columns
 required_columns = {
     "N", "P", "K", "temperature", "humidity",
     "ph", "rainfall", "label", "rates", "yield"
@@ -78,7 +107,7 @@ try:
     model.fit(X_train, y_train)
     acc = model.score(X_test, y_test)
     print(f"Model training complete. Test accuracy: {acc*100:.2f}%")
-except Exception as e:
+except Exception:
     print("ERROR: Exception during training or evaluation.")
     raise
 
@@ -88,7 +117,7 @@ try:
     with open(outname, "wb") as f:
         pickle.dump(model, f)
     print(f"Trained model saved to: {outname}")
-except Exception as e:
+except Exception:
     print("ERROR: Failed to serialize model.")
     raise
 
@@ -107,10 +136,11 @@ print("\nRunning demo prediction with example inputs:")
 try:
     demo = predict_crop(42, 0, 0, 25, 80, 6.5, 200)
     print("Predicted crop:", demo)
-except Exception as e:
+except Exception:
     print("Demo prediction failed.")
     raise
 
 print("\nPipeline completed successfully.")
+
 
 
